@@ -1,0 +1,222 @@
+{
+  "run_at": "2026-04-28T21:14:42.097Z",
+  "summary": {
+    "tests_passed": 9,
+    "tests_total": 10,
+    "checks_passed": 23,
+    "checks_failed": 1,
+    "score_pct": "96%"
+  },
+  "results": [
+    {
+      "id": 1,
+      "name": "Normal case — full data both products",
+      "checks": [
+        {
+          "check": "Both products extracted",
+          "pass": true,
+          "detail": "Got 2/2"
+        },
+        {
+          "check": "No missing prices",
+          "pass": true,
+          "detail": "799 AED, 549 AED"
+        },
+        {
+          "check": "Confidence > 0.5",
+          "pass": true,
+          "detail": "Got 1.00"
+        }
+      ],
+      "passed": 3,
+      "failed": 0,
+      "error": null
+    },
+    {
+      "id": 2,
+      "name": "Missing data — vague descriptions",
+      "checks": [
+        {
+          "check": "Both products extracted",
+          "pass": true,
+          "detail": "Got 2/2"
+        },
+        {
+          "check": "Missing fields detected",
+          "pass": true,
+          "detail": "System correctly shows 'Not specified'"
+        },
+        {
+          "check": "Confidence < 0.6",
+          "pass": true,
+          "detail": "Got 0.00"
+        }
+      ],
+      "passed": 3,
+      "failed": 0,
+      "error": null
+    },
+    {
+      "id": 3,
+      "name": "Partial data — one has price, one has weight",
+      "checks": [
+        {
+          "check": "Both products extracted",
+          "pass": true,
+          "detail": "Got 2/2"
+        },
+        {
+          "check": "Missing fields detected",
+          "pass": true,
+          "detail": "System correctly shows 'Not specified'"
+        }
+      ],
+      "passed": 2,
+      "failed": 0,
+      "error": null
+    },
+    {
+      "id": 4,
+      "name": "Garbage input — should fail gracefully",
+      "checks": [
+        {
+          "check": "Both products extracted",
+          "pass": true,
+          "detail": "Got 2/2"
+        },
+        {
+          "check": "Low confidence on garbage input",
+          "pass": true,
+          "detail": "Got 0.00"
+        }
+      ],
+      "passed": 2,
+      "failed": 0,
+      "error": null
+    },
+    {
+      "id": 5,
+      "name": "Conflicting data — heavy vs light labels",
+      "checks": [
+        {
+          "check": "Both products extracted",
+          "pass": true,
+          "detail": "Got 2/2"
+        },
+        {
+          "check": "Verdict mentions weight",
+          "pass": true,
+          "detail": "✓ found weight reference"
+        }
+      ],
+      "passed": 2,
+      "failed": 0,
+      "error": null
+    },
+    {
+      "id": 6,
+      "name": "High price difference",
+      "checks": [
+        {
+          "check": "Both products extracted",
+          "pass": true,
+          "detail": "Got 2/2"
+        },
+        {
+          "check": "Confidence > 0.5",
+          "pass": true,
+          "detail": "Got 0.80"
+        },
+        {
+          "check": "Verdict mentions price",
+          "pass": true,
+          "detail": "✓ found price reference"
+        }
+      ],
+      "passed": 3,
+      "failed": 0,
+      "error": null
+    },
+    {
+      "id": 7,
+      "name": "Identical products",
+      "checks": [
+        {
+          "check": "Both products extracted",
+          "pass": true,
+          "detail": "Got 2/2"
+        },
+        {
+          "check": "No crash or error",
+          "pass": true,
+          "detail": "System handled gracefully"
+        }
+      ],
+      "passed": 2,
+      "failed": 0,
+      "error": null
+    },
+    {
+      "id": 8,
+      "name": "Arabic input",
+      "checks": [
+        {
+          "check": "Both products extracted",
+          "pass": true,
+          "detail": "Got 2/2"
+        },
+        {
+          "check": "No crash or error",
+          "pass": true,
+          "detail": "System handled gracefully"
+        }
+      ],
+      "passed": 2,
+      "failed": 0,
+      "error": null
+    },
+    {
+      "id": 9,
+      "name": "Missing age range only",
+      "checks": [
+        {
+          "check": "Both products extracted",
+          "pass": true,
+          "detail": "Got 2/2"
+        },
+        {
+          "check": "Age range correctly marked missing",
+          "pass": true,
+          "detail": "Not specified, Not specified"
+        }
+      ],
+      "passed": 2,
+      "failed": 0,
+      "error": null
+    },
+    {
+      "id": 10,
+      "name": "Very long detailed description",
+      "checks": [
+        {
+          "check": "Both products extracted",
+          "pass": true,
+          "detail": "Got 2/2"
+        },
+        {
+          "check": "Confidence > 0.7",
+          "pass": false,
+          "detail": "Got 0.50"
+        },
+        {
+          "check": "Verdict mentions price",
+          "pass": true,
+          "detail": "✓ found price reference"
+        }
+      ],
+      "passed": 2,
+      "failed": 1,
+      "error": null
+    }
+  ]
+}
