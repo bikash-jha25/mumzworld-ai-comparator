@@ -6,15 +6,32 @@ An AI-powered product comparison engine for Mumzworld. A mom selects two strolle
 
 ---
 
+## 🎬 Demo Walkthrough (Loom — 3 min)
+
+**[▶ Watch the demo](https://www.loom.com/share/348b694fe2454861b722e3a891324137)**
+
+    https://www.loom.com/share/348b694fe2454861b722e3a891324137
+
+The video shows 5 inputs end-to-end:
+
+1. Full data — both products with complete specs, high confidence
+2. Price gap — 2500 AED vs 199 AED, verdict surfaces cost difference
+3. Missing data — vague descriptions, warnings fire, confidence drops
+4. Bilingual output — Arabic UI toggle with RTL layout
+5. Garbage input — system returns low confidence, never crashes
+
+---
+
 ## One-Paragraph Summary
 
-This prototype solves the product comparison problem on Mumzworld: a mom browsing strollers faces dozens of similar-looking options with no easy way to evaluate them side by side. The system takes two free-text product descriptions, extracts structured data (price, weight, age range) using LLaMA 3.3 70B via Groq, compares them across a feature table, generates an AI verdict with a calibrated confidence score, and produces a native bilingual blog post in English and Arabic. Missing data is surfaced explicitly as warnings rather than papered over. The output is grounded strictly in the input — the model says "Not specified" or "I couldn't find this information" when data is absent, never invents it.
+This prototype solves the product comparison problem on Mumzworld: a mom browsing strollers faces dozens of similar-looking options with no easy way to evaluate them side by side. The system takes two free-text product descriptions, extracts structured data (price, weight, age range) using LLaMA 3.3 70B via Groq, compares them across a feature table, generates an AI verdict with a calibrated confidence score, and produces a native bilingual blog post in English and Arabic. Missing data is surfaced explicitly as warnings rather than papered over. The output is grounded strictly in the input — the model says "Not specified" when data is absent, never invents it.
 
 ---
 
 ## Setup — Under 5 Minutes
 
 ### Prerequisites
+
 - Node.js v18+
 - A free [Groq API key](https://console.groq.com) (no credit card required)
 
@@ -51,6 +68,7 @@ node index.js
 ```
 
 Server runs on `http://localhost:5000`. You should see:
+
 ```
 Server running on port 5000
 ```
@@ -89,7 +107,7 @@ mumzworld-ai-comparator/
 │       │   ├── ProductCard.jsx    # Selectable product card
 │       │   └── Shimmer.jsx        # Loading skeleton
 │       └── data/
-│           └── products.js        # Mock stroller catalog
+│           └── products.js        # Mock stroller catalog (10 cards incl. edge cases)
 │
 ├── server/                        # Node.js + Express backend
 │   ├── index.js                   # Express app, /extract and /compare routes
@@ -113,9 +131,11 @@ mumzworld-ai-comparator/
 ## API Endpoints
 
 ### `POST /extract`
+
 Extracts structured product data from a free-text description.
 
 **Input:**
+
 ```json
 {
   "description": "Joie stroller, 9kg, 799 AED, suitable from birth"
@@ -123,6 +143,7 @@ Extracts structured product data from a free-text description.
 ```
 
 **Output:**
+
 ```json
 {
   "name": "Joie stroller",
@@ -134,9 +155,11 @@ Extracts structured product data from a free-text description.
 ```
 
 ### `POST /compare`
+
 Full pipeline: extract → compare → verdict → bilingual blog.
 
 **Input:**
+
 ```json
 {
   "descriptions": [
@@ -147,6 +170,7 @@ Full pipeline: extract → compare → verdict → bilingual blog.
 ```
 
 **Output includes:**
+
 - `products` — structured extraction for each product
 - `table` — feature comparison rows
 - `verdict` — AI-generated recommendation
@@ -166,6 +190,7 @@ Full pipeline: extract → compare → verdict → bilingual blog.
 - **Bilingual output** — English and Arabic blog posts generated natively, not translated; Arabic sanitized to strip Unicode artifacts from mixed-script LLM outputs
 - **Language toggle** — frontend switches between EN and AR UI with proper RTL layout and Arabic font (Noto Kufi Arabic)
 - **Graceful failure** — garbage input returns low confidence and fallback values, never crashes
+- **Robust JSON parser** — 5-step extraction strategy handles multiline LLM output without breaking
 
 ---
 
@@ -187,6 +212,7 @@ node evals/run_evals.js
 ## Tradeoffs
 
 See [TRADEOFFS.md](./TRADEOFFS.md) for:
+
 - Why this problem over the other options in the brief
 - Architecture decisions and what they cost
 - What was cut and why
@@ -197,48 +223,51 @@ See [TRADEOFFS.md](./TRADEOFFS.md) for:
 ## Tooling
 
 ### Models
+
 - **LLaMA 3.3 70B via Groq** — used for all three AI stages: extraction, verdict generation, and bilingual blog generation. Chosen for speed (Groq's inference is ~5–10x faster than most hosted APIs), cost (free tier sufficient for all development and evals), and strong instruction-following for structured JSON output. Temperature set to 0.2 for extraction (needs determinism), 0.3 for verdicts, 0.4 for blog generation (needs some creative variation).
 
 ### AI Coding Assistants
-- **Claude (Anthropic)** — used for pair-coding throughout. Specifically: scaffolding the three-service pipeline architecture, writing the Zod schema, debugging the JSON cleaning logic (the markdown fence stripping in extractor.js and generator.js), and iterating on the Arabic prompt rules after observing Unicode bleed artifacts in early outputs.
-- **Prompt iteration** — the Arabic generation prompt went through four versions. The key changes were: (1) adding explicit product name preservation rules after "ROLLER" appeared mid-Arabic-word, (2) adding Unicode range restrictions (`U+0600–U+06FF`) after Gothic and Vietnamese characters appeared, (3) adding the post-processing `sanitizeArabic()` function as a safety net independent of what the model does.
+
+- **Claude (Anthropic)** — used for pair-coding throughout. Specifically: scaffolding the three-service pipeline architecture, writing the Zod schema, debugging the JSON cleaning logic, and iterating on the Arabic prompt rules after observing Unicode bleed artifacts in early outputs.
+- **Prompt iteration** — the Arabic generation prompt went through four versions. The key changes were: (1) adding explicit product name preservation rules after "ROLLER" appeared mid-Arabic-word, (2) adding Unicode range restrictions after Gothic and Vietnamese characters appeared, (3) adding the post-processing `sanitizeArabic()` function as a safety net, (4) instructing the model to use `\n` instead of actual newlines to fix JSON parse failures.
 
 ### What worked
+
 - Groq's speed made the iteration loop fast — running a comparison end-to-end takes ~3–4 seconds, which meant prompt changes could be tested quickly
-- Splitting extraction, comparison, and generation into separate services made debugging straightforward — each failure mode was isolatable
-- Claude was useful for explaining *why* a prompt was failing (e.g. why the model was splitting "Stroller" into "ست" + "ROLLER") not just patching it
+- Splitting extraction, comparison, and generation into three separate services made debugging straightforward — each failure mode was isolatable
+- Claude was useful for explaining _why_ a prompt was failing (e.g. why the model was splitting "Stroller" into "ست" + "ROLLER") not just patching it
 
 ### What didn't work
-- Early versions used a single prompt for extraction + verdict + blog. The output was inconsistent and hard to validate. Splitting into three calls added latency but made each stage reliable and testable independently
+
+- Early versions used a single prompt for extraction + verdict + blog. Output was inconsistent and hard to validate. Splitting into three calls added latency but made each stage reliable and independently testable
 - The model at `temperature: 0.0` for blog generation produced noticeably robotic Arabic. Bumping to 0.4 improved naturalness significantly
-- Asked the model to return confidence as a percentage (0–100) in early versions — it would return strings like "80%" instead of floats. Switched to explicit float instructions and the `0.0` example format in the schema
+- Asked the model to return confidence as a percentage (0–100) in early versions — it returned strings like "80%" instead of floats. Switched to explicit float instructions with the `0.0` example format
 
 ### Key prompts
-The most important prompt is in `server/services/generator.js` — the Arabic blog generation prompt. The critical lines that shaped output quality:
+
+The most impactful prompt is in `server/services/generator.js`. The critical rules that eliminated the two main Arabic failure modes:
 
 ```
-- For product names, keep the FULL original English name exactly as provided
-- NEVER translate, transliterate, modify, or split product names
+- Keep product names EXACTLY as given — never translate them
+- The entire response must be a single line of valid JSON
+- Do NOT use actual newlines inside JSON string values — use \n instead
 - Write ONLY in Arabic Unicode characters (U+0600–U+06FF range)
-- DO NOT include Vietnamese, Thai, Latin diacritics, Gothic letters, or any special Unicode symbols
 ```
-
-These four rules eliminated the two main Arabic failure modes (name corruption, Unicode bleed) that appeared in early runs.
 
 ---
 
 ## Time Log
 
-| Phase | Time spent |
-|---|---|
-| Problem selection + scoping | ~30 min |
-| Backend pipeline (extractor, comparator, generator) | ~90 min |
-| Prompt iteration (especially Arabic) | ~60 min |
-| Zod validation + error handling | ~30 min |
-| Frontend (React UI, RTL, language toggle) | ~60 min |
-| Evals (writing test cases + running) | ~30 min |
-| README, EVALS.md, TRADEOFFS.md | ~30 min |
-| **Total** | **~5.5 hours** |
+| Phase                                               | Time spent     |
+| --------------------------------------------------- | -------------- |
+| Problem selection + scoping                         | ~30 min        |
+| Backend pipeline (extractor, comparator, generator) | ~90 min        |
+| Prompt iteration (especially Arabic)                | ~60 min        |
+| Zod validation + error handling                     | ~30 min        |
+| Frontend (React UI, RTL, language toggle)           | ~60 min        |
+| Evals (writing test cases + running)                | ~30 min        |
+| README, EVALS.md, TRADEOFFS.md                      | ~30 min        |
+| **Total**                                           | **~5.5 hours** |
 
 Went slightly over 5 hours on documentation. The Arabic prompt iteration took longer than expected — tracking down and fixing the Unicode bleed issue added ~20 minutes that wasn't in the original plan.
 
@@ -256,7 +285,7 @@ Went slightly over 5 hours on documentation. The Arabic prompt iteration took lo
 
 ## Known Limitations
 
-- Extraction quality scales with input formatting — richly structured descriptions ("Joie stroller, 9kg, 799 AED") extract reliably; vague inputs ("lightweight stroller") return mostly "Not specified"
+- Extraction quality scales with input formatting — richly structured descriptions extract reliably; vague inputs return mostly "Not specified"
 - Arabic output quality is assessed manually, not by automated eval — a proper production system would use an LLM-as-judge graded against Gulf-market copy standards
 - Mock product data only includes price, weight, and age range — a real integration would expose safety ratings, fold type, car seat compatibility, and more
 - The system compares exactly 2 products; the brief mentions 2–5 product comparison as a future direction
